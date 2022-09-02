@@ -1,0 +1,185 @@
+---
+title: "Esports Growth and Visualizations from 1998-2020"
+format:
+  revealjs:
+    transition: slide
+    css: style.css
+editor: visual
+---
+
+
+## Introduction
+
+In this presentation, I have chosen to make a visualization of Esports datasets that span from 1998 to 2020. I imported these documents as csv files and got all the data from Kaggle. The data on Kaggle was scraped from a Esports Earnings website. Esports is a relatively new field of competitive sports. I mainly tried to find information regarding the growth of Esports through monetary means. The following plots will show the growth and popularity of well known games.
+
+Sources: https://www.kaggle.com/datasets/webbery/esports-earnings-19982020,                                 https://www.kaggle.com/datasets/jackdaoud/esports-earnings-for-players-teams-by-game
+https://www.esportsearnings.com/
+![](images/esports1.jpg){.absolute right=50 width="450"}
+![](images/esports2.jpg){.absolute bottom=0 width="450"}
+
+## Team Prizes versus Player Prizes 
+These graphs show the various amounts won by teams and individual players. Dota2 is clearly in the lead and these large prizes will continue to be reflected in another plot. These plots communicate the prizes of popular games. In the example of individual prizes, Dota2 generally have higher starting prizes than other games. This graph is good for communicating the individual and team earnings based on games.
+```{r}
+# load libraries
+library(tidyverse)
+library(shiny)
+library(patchwork)
+library(ggthemes)
+library(ggrepel)
+
+# load data
+library(readxl)
+eSports_Earnings_1998_2020 <- read_excel("esports data/eSports Earnings 1998-2020.xlsx")
+highest_earning_players <- read.csv("esports data/highest_earning_players.csv")
+highest_earning_teams <- read.csv("esports data/highest_earning_teams.csv")
+
+#| label: Team vs Individual Prizes
+#| fig-width: 25
+#| fig-height: 25
+
+# plot
+team_prize_plot <- ggplot(data = highest_earning_teams,
+       aes(x = Game,
+           y = TotalUSDPrize,
+           color = Game,
+           ),
+       show.legend = FALSE) +
+  geom_jitter(width = 0.2) +
+  geom_point(size = 1) +
+  scale_y_continuous(
+    breaks = c(0e+00,1e+07, 2e+07, 3e+07),
+    labels = c("0", "$10 mil", "$20 mil", "$30 mil")
+  ) +
+  labs(
+    title = "Team Prizes Based on Game",
+    x = "Game Name",
+    y = "Team Prizes (USD)",
+    
+  ) +
+  theme_minimal() +
+  theme(legend.position = 'none',
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        plot.title = element_text(size=16)) 
+  
+
+player_prize_plot <- ggplot(data = highest_earning_players,
+  aes(x = Game,
+      y = TotalUSDPrize,
+      color = Game)) +
+  geom_point(size = 1) +
+  scale_y_continuous(
+    breaks = c(0e+00, 2e+06, 4e+06, 6e+06),
+    labels = c("0", "$2 mil", "$4 mil", "$6 mil")
+  ) +
+  labs(
+    title = "Player Prizes Based on Game",
+    y = "Player Prizes (USD)",
+    color = "Game Name",
+    caption = "Source: https://www.kaggle.com/datasets/jackdaoud/esports-earnings-for-players-teams-by-game"
+  ) +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.title = element_text(size = 12), 
+        legend.text = element_text(size = 12),
+        plot.title = element_text(size=16))
+
+team_prize_plot + player_prize_plot
+
+
+```
+
+## Highest Prizes and Average Prizes 
+This graph shows the explosive increase in payouts for Esport players and the also steep decline during 2020. During 2020, top games such as Fortnite, CS:GO and League of Legends cut their payouts significantly, some as much by 80% from the previous year. Much as this had to do with circumstances surrounding the pandemic and is reflected on the graph. Interestingly enough, the top earner for 2020 was Magnus Carlson, one of the best chess players in the world. 
+
+Source: https://www.forbes.com/sites/mattgardner1/2021/01/12/the-2020-esports-earnings-table-prizes-plummet-chess-wins-big/?sh=13d326516af4
+```{r}
+#| label: Prize Money over Time
+# plot
+ggplot(data = eSports_Earnings_1998_2020,
+       aes(x = YEAR,
+           y = TotalPrize)) +
+  geom_line(aes(y = TotalPrize, color = "red")) +
+  geom_point(aes(y = TotalPrize, color = "red")) +
+  geom_point(aes(y = Average, color = "blue")) +
+  geom_line(aes(y = Average, color = "blue")) +
+  geom_text_repel(
+    data = eSports_Earnings_1998_2020,
+    mapping = aes(label = Name),
+    box.padding = 0.6,
+    min.segment.length = 0,
+    max.overlaps = 5,
+    size = 3,
+    seed = 1020
+  ) +
+  labs(
+    title = "Top Cash Prize and Average Prizes by Year",
+    x = "Year",
+    y = "Cash Prize (USD)",
+    caption = "Source: https://www.kaggle.com/datasets/webbery/esports-earnings-19982020"
+  ) +
+  scale_color_manual(
+    name = "Legend",
+    values = c("blue", "red"),
+    labels = c("Average of\nTop Ten\nEarners", "\nHighest\nEarnings")
+  ) +
+  scale_y_continuous(
+    breaks = c(0e+00, 1e+06, 2e+06, 3e+06),
+    labels = c("0", "$1 mil", "$2 mil", "$3 mil")
+  ) +
+  theme_minimal()
+#
+
+```
+
+
+## Tournament Totals vs Cash Prizes
+Here, you can see the quantity of tournaments played for each genre of game and the prizes that those games have paid out. It's interesting to see that although strategy games have had the most tournaments, the total prize pool for stategy games is relatively small. The overwhelming amount of cash paid out for MOBA's (Multiplayer Online Battle Arenas) can be attributed to the popularity of games such as League of Legends and Dota2. This plot is good for communicating the comparison of payouts from various game categories. It also communicates the monetary value of tournaments based on genre.
+```{r}
+#| Tournaments and Cash Prizes
+
+
+# plot
+total_tournaments <- ggplot(data = highest_earning_teams,
+       aes(x = Genre,
+           y = TotalTournaments)) +
+  geom_col(width = .7, aes(fill = Genre)) +
+  theme_minimal() +
+  labs(
+    title = "Tournaments from 1998-2020",
+    y = "Total Tournaments"
+  ) +
+  scale_x_discrete(
+    limits = c("Strategy", "Multiplayer Online Battle Arena", "First-Person Shooter", "Battle Royale", "Collectible Card Game"),
+    labels = c("Strategy", "MOBA", "FPS", "Battle Royale", "Collectible\nCard\nGame"),
+    expand = c(0,0)) +
+  scale_fill_manual(values=c("#ff90af", "#ffebe8", "#f798ba", "#b63f79", "#073763")) +
+  theme(legend.position = 'none') 
+
+total_prize <- ggplot(data = highest_earning_teams,
+       aes(x = Genre,
+           y = TotalUSDPrize)) +
+  geom_col(width = .7, aes(fill = Genre)) +
+  theme_minimal() +
+  labs(
+    title = "Cash Prizes from 1998-2020",
+    y = "Total Cash Prizes (USD)",
+    caption = "Source: https://www.kaggle.com/datasets/jackdaoud/esports-earnings-for-players-teams-by-game"
+  ) +
+  scale_fill_manual(values=c("#ff90af", "#ffebe8", "#f798ba", "#b63f79", "#073763")) +
+  scale_y_continuous(
+    breaks = c(0e+00, 1e+08, 2e+08, 3e+08),
+    labels = c("0", "$100 mil", "$200 mil", "$300 mil")
+  ) +
+  scale_x_discrete(
+    limits = c("Multiplayer Online Battle Arena", "First-Person Shooter", "Battle Royale", "Strategy", "Collectible Card Game"),
+    labels = c("MOBA", "FPS", "Battle Royale", "Strategy", "Collectible\nCard\nGame"),
+    expand = c(0,0)) +
+  theme(legend.position = 'none')
+
+total_tournaments + total_prize
+
+
+```
